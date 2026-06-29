@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cuerda">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Cuerda · 386 kcal · 40 min</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #222; --border: #2e2e2e;
+    --text: #f0f0f0; --text-2: #888; --text-3: #444;
+    --work: #ff4d4d; --rest: #22c55e; --warm: #f59e0b; --cool: #3b82f6; --floor: #a855f7;
+  }
+  html, body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@600;700&display=swap');
+  .screen { display: none; min-height: 100dvh; flex-direction: column; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  .screen.active { display: flex; }
+
+  /* START */
+  #start { padding: 2rem 1.5rem 3rem; align-items: center; justify-content: center; text-align: center; }
+  .logo { font-size: 52px; margin-bottom: 1.25rem; }
+  .title { font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.8rem,7vw,2.8rem); font-weight: 700; letter-spacing: -.03em; margin-bottom: .4rem; }
+  .title span { color: var(--work); }
+  .subtitle { font-size: .9rem; color: var(--text-2); margin-bottom: 2rem; }
+  .stat-row { display: flex; gap: 8px; margin-bottom: 1.75rem; width: 100%; max-width: 360px; }
+  .stat-box { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: .875rem .5rem; text-align: center; }
+  .stat-box .n { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700; }
+  .stat-box .l { font-size: .72rem; color: var(--text-2); margin-top: 2px; }
+  .breakdown { width: 100%; max-width: 360px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1.75rem; text-align: left; }
+  .bk-hdr { font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; color: var(--text-3); margin-bottom: .75rem; }
+  .bk-row { display: flex; justify-content: space-between; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
+  .bk-row:last-child { border-bottom: none; }
+  .bk-l { display: flex; align-items: center; gap: 8px; color: var(--text); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .bk-r { color: var(--text-2); }
+  .btn-main { width: 100%; max-width: 360px; padding: 1.1rem; background: var(--work); color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 1.05rem; font-weight: 700; border: none; border-radius: 14px; cursor: pointer; transition: opacity .15s, transform .1s; }
+  .btn-main:active { opacity: .85; transform: scale(.98); }
+  .perm-note { font-size: .78rem; color: var(--text-3); margin-top: 1rem; max-width: 300px; line-height: 1.5; }
+
+  /* WORKOUT */
+  #workout { padding: 0; }
+  .flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 10; }
+  .flash.show { opacity: 1; }
+  #workout { position: relative; }
+  #change-banner { display: none; align-items: center; justify-content: center; padding: .65rem 1rem; font-family: 'Space Grotesk', sans-serif; font-size: .95rem; font-weight: 600; letter-spacing: .02em; animation: slide-down .25s ease both; }
+  #change-banner.show { display: flex; }
+  @keyframes slide-down { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+  .w-top { padding: 1rem 1.25rem .75rem; display: flex; align-items: center; justify-content: space-between; }
+  .round-lbl { font-size: .8rem; color: var(--text-2); }
+  .btn-sm { background: var(--surface2); border: 1px solid var(--border); color: var(--text-2); padding: .4rem .85rem; border-radius: 8px; font-size: .78rem; cursor: pointer; font-family: inherit; }
+  .phase-bar { height: 4px; background: var(--border); width: 100%; overflow: hidden; }
+  .phase-fill { height: 100%; width: 100%; transition: width 1s linear, background .3s; }
+  .w-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1.5rem 1rem; }
+  .phase-pill { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; padding: .25rem .875rem; border-radius: 99px; font-weight: 600; margin-bottom: 1rem; }
+  .big-time { font-family: 'Space Grotesk', sans-serif; font-size: clamp(5rem,20vw,7.5rem); font-weight: 700; line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; margin-bottom: 1.25rem; transition: color .3s; }
+  .big-time.warning { animation: pulse-warn .5s ease infinite alternate; }
+  @keyframes pulse-warn { from { opacity:1; } to { opacity:.35; } }
+  .ex-title { font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.3rem,5vw,1.9rem); font-weight: 700; text-align: center; margin-bottom: .5rem; }
+  .ex-tip { font-size: .88rem; color: var(--text-2); text-align: center; max-width: 280px; line-height: 1.55; min-height: 2.8em; }
+  .w-bottom { padding: .75rem 1.25rem 1.75rem; }
+  .metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: .875rem; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .75rem .5rem; text-align: center; }
+  .metric .n { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .metric .l { font-size: .68rem; color: var(--text-2); margin-top: 2px; }
+  .next-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .75rem 1rem; display: flex; align-items: center; gap: 10px; margin-bottom: .875rem; }
+  .next-info .nl { font-size: .68rem; color: var(--text-3); }
+  .next-info .nn { font-size: .875rem; color: var(--text-2); }
+  .ctrl-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .ctrl-btn { padding: .75rem .25rem; background: var(--surface2); border: 1px solid var(--border); color: var(--text-2); border-radius: 10px; font-size: .75rem; cursor: pointer; font-family: inherit; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .ctrl-btn:active { background: #333; }
+  .ctrl-btn .ci { font-size: 1.1rem; }
+  .ctrl-btn.pause-btn { color: var(--text); border-color: #555; }
+
+  /* DONE */
+  #done { padding: 3rem 1.5rem; align-items: center; justify-content: center; text-align: center; }
+  .trophy { font-size: 52px; margin-bottom: 1rem; }
+  .done-title { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; margin-bottom: .4rem; }
+  .done-sub { color: var(--text-2); font-size: .9rem; margin-bottom: 2rem; }
+  .done-stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; width: 100%; max-width: 300px; margin-bottom: 2rem; }
+  .done-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1rem; }
+  .done-stat .n { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; }
+  .done-stat .l { font-size: .72rem; color: var(--text-2); margin-top: 4px; }
+  .done-stat.hi { border-color: var(--work); }
+  .done-stat.hi .n { color: var(--work); }
+</style>
+</head>
+<body>
+
+<div id="start" class="screen active">
+  <div class="logo">🪢</div>
+  <h1 class="title">~386 <span>kcal</span></h1>
+  <p class="subtitle">Cuerda + suelo · 73 kg · 9 rondas · 40 min</p>
+  <div class="stat-row">
+    <div class="stat-box"><div class="n">9</div><div class="l">rondas</div></div>
+    <div class="stat-box"><div class="n">40</div><div class="l">minutos</div></div>
+    <div class="stat-box"><div class="n">~386</div><div class="l">kcal</div></div>
+  </div>
+  <div class="breakdown">
+    <div class="bk-hdr">Estructura de cada ronda — 3 min 30 seg</div>
+    <div class="bk-row"><div class="bk-l"><div class="dot" style="background:var(--warm)"></div>Calentamiento</div><div class="bk-r">3 min (inicio)</div></div>
+    <div class="bk-row"><div class="bk-l"><div class="dot" style="background:var(--work)"></div>Sprint con cuerda</div><div class="bk-r">2 min · ~28 kcal</div></div>
+    <div class="bk-row"><div class="bk-l"><div class="dot" style="background:var(--floor)"></div>Ejercicio de suelo</div><div class="bk-r">1 min · ~11 kcal</div></div>
+    <div class="bk-row"><div class="bk-l"><div class="dot" style="background:var(--rest)"></div>Descanso</div><div class="bk-r">30 seg · ~1 kcal</div></div>
+    <div class="bk-row"><div class="bk-l"><div class="dot" style="background:var(--cool)"></div>Enfriamiento</div><div class="bk-r">3 min (final)</div></div>
+  </div>
+  <button class="btn-main" onclick="requestPermsAndStart()">Comenzar ›</button>
+  <p class="perm-note">Usa sonido y vibración para avisar cuando cambia el ejercicio.</p>
+</div>
+
+<div id="workout" class="screen">
+  <div class="flash" id="flash"></div>
+  <div id="change-banner"></div>
+  <div class="w-top">
+    <div class="round-lbl" id="round-lbl">Calentamiento</div>
+    <button class="btn-sm" onclick="stopWorkout()">✕ Salir</button>
+  </div>
+  <div class="phase-bar"><div class="phase-fill" id="phase-fill"></div></div>
+  <div class="w-center">
+    <div class="phase-pill" id="phase-pill">Calienta 🔥</div>
+    <div class="big-time" id="big-time">3:00</div>
+    <div class="ex-title" id="ex-title">Salto básico</div>
+    <div class="ex-tip" id="ex-tip">Ritmo cómodo, pies juntos. Activa los tobillos.</div>
+  </div>
+  <div class="w-bottom">
+    <div class="metrics">
+      <div class="metric"><div class="n" id="m-cal">0</div><div class="l">kcal</div></div>
+      <div class="metric"><div class="n" id="m-left">386</div><div class="l">restantes</div></div>
+      <div class="metric"><div class="n" id="m-time">40:00</div><div class="l">tiempo</div></div>
+    </div>
+    <div class="next-card">
+      <div style="font-size:18px">→</div>
+      <div class="next-info">
+        <div class="nl">A continuación</div>
+        <div class="nn" id="next-txt">Sprint con cuerda — 2:00</div>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" onclick="prevPhase()"><span class="ci">⏮</span><span>Anterior</span></button>
+      <button class="ctrl-btn pause-btn" id="btn-pause" onclick="togglePause()"><span class="ci" id="pause-icon">⏸</span><span id="pause-lbl">Pausar</span></button>
+      <button class="ctrl-btn" onclick="nextPhase()"><span class="ci">⏭</span><span>Siguiente</span></button>
+      <button class="ctrl-btn" onclick="restartWorkout()"><span class="ci">↺</span><span>Reiniciar</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="done" class="screen">
+  <div class="trophy">🏆</div>
+  <div class="done-title">¡Lo lograste!</div>
+  <div class="done-sub">Sesión completada</div>
+  <div class="done-stats">
+    <div class="done-stat hi"><div class="n" id="d-cal">386</div><div class="l">kcal quemadas</div></div>
+    <div class="done-stat"><div class="n" id="d-time">40:00</div><div class="l">duración</div></div>
+    <div class="done-stat"><div class="n">9</div><div class="l">rondas</div></div>
+    <div class="done-stat"><div class="n">73</div><div class="l">kg</div></div>
+  </div>
+  <button class="btn-main" onclick="resetAll()">Otra sesión</button>
+</div>
+
+<script>
+const ROUNDS=9, CAL_TOTAL=386;
+const floorEx=[
+  {name:"Burpees",tip:"Al suelo, flexión, salta, palmas arriba. ¡Explosivo!"},
+  {name:"Squat jumps",tip:"Baja en sentadilla, salta fuerte, aterriza suave."},
+  {name:"Mountain climbers",tip:"Plancha, rodillas al pecho alternando rápido."},
+  {name:"Burpees",tip:"Al suelo, flexión, salta, palmas arriba. ¡Explosivo!"},
+  {name:"Squat jumps",tip:"Baja en sentadilla, salta fuerte, aterriza suave."},
+  {name:"Mountain climbers",tip:"Plancha, rodillas al pecho alternando rápido."},
+  {name:"Burpees",tip:"Al suelo, flexión, salta, palmas arriba. ¡Explosivo!"},
+  {name:"Squat jumps",tip:"Baja en sentadilla, salta fuerte, aterriza suave."},
+  {name:"Mountain climbers",tip:"Plancha, rodillas al pecho alternando rápido."},
+];
+const phases=[
+  {name:"Salto básico",type:"warm",color:"#f59e0b",dur:180,tip:"Ritmo cómodo, pies juntos. Activa tobillos y pantorrillas.",label:"Calentamiento"},
+];
+for(let r=0;r<ROUNDS;r++){
+  const lbl="Ronda "+(r+1)+" / "+ROUNDS, fl=floorEx[r];
+  phases.push({name:"Sprint con cuerda",type:"work",color:"#ff4d4d",dur:120,tip:"Máxima velocidad. Muñecas rápidas, saltos pequeños.",label:lbl});
+  phases.push({name:fl.name,type:"floor",color:"#a855f7",dur:60,tip:fl.tip,label:lbl});
+  phases.push({name:"Descansa",type:"rest",color:"#22c55e",dur:30,tip:"Respira profundo. Sacude las piernas.",label:lbl});
+}
+phases.push({name:"Vuelta a la calma",type:"cool",color:"#3b82f6",dur:180,tip:"Salto suave 1 min, luego estira pantorrillas y cuádriceps.",label:"Enfriamiento"});
+
+const TOTAL_DUR=phases.reduce((a,p)=>a+p.dur,0);
+const CAL_PER_SEC=CAL_TOTAL/TOTAL_DUR;
+const typeLabel={work:"Trabaja 💪",floor:"Suelo 🔥",rest:"Descansa 😮‍💨",warm:"Calienta 🔥",cool:"Enfría 🧘"};
+const changeMsgs={work:"¡Cuerda!",floor:"¡Al suelo!",rest:"¡Descansa!",warm:"¡Empieza!",cool:"¡Último esfuerzo!"};
+
+let idx=0,secLeft=0,totalLeft=0,calBurned=0,phaseDur=0,paused=false,ticker=null,audioCtx=null,bannerTimer=null,wl=null;
+const $=id=>document.getElementById(id);
+function fmt(s){const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
+function beep(freq,dur,vol,delay=0){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);
+  o.frequency.value=freq;o.type='sine';
+  const t=audioCtx.currentTime+delay;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.01);g.gain.linearRampToValueAtTime(0,t+dur);
+  o.start(t);o.stop(t+dur+0.05);
+}
+function playCountdown(){beep(660,.08,.3,0);beep(660,.08,.3,.15);beep(660,.08,.3,.3);}
+function playChange(){beep(880,.12,.5,0);beep(1100,.18,.6,.14);}
+function playDone(){beep(660,.1,.5,0);beep(880,.1,.5,.15);beep(1100,.2,.6,.3);}
+function vib(pat){if(navigator.vibrate)navigator.vibrate(pat);}
+
+function showBanner(p){
+  const b=$('change-banner');
+  clearTimeout(bannerTimer);
+  b.textContent=changeMsgs[p.type]||p.name;
+  b.style.background=p.color+'33';b.style.color=p.color;b.style.borderBottom='1px solid '+p.color+'55';
+  b.classList.add('show');
+  bannerTimer=setTimeout(()=>b.classList.remove('show'),1800);
+}
+function flashScreen(color){
+  const f=$('flash');f.style.background=color+'55';f.classList.add('show');
+  setTimeout(()=>f.classList.remove('show'),300);
+}
+
+async function reqWakeLock(){
+  if('wakeLock' in navigator){
+    try{wl=await navigator.wakeLock.request('screen');}catch(e){}
+  }
+}
+document.addEventListener('visibilitychange',async()=>{
+  if(wl&&document.visibilityState==='visible') reqWakeLock();
+});
+
+async function requestPermsAndStart(){
+  initAudio();
+  if(audioCtx&&audioCtx.state==='suspended') await audioCtx.resume();
+  await reqWakeLock();
+  startWorkout();
+}
+
+function startWorkout(){
+  idx=0;calBurned=0;totalLeft=TOTAL_DUR;paused=false;
+  setPauseUI(false);show('workout');loadPhase();
+  ticker=setInterval(tick,1000);
+}
+function loadPhase(isNew=false){
+  const p=phases[idx];secLeft=p.dur;phaseDur=p.dur;
+  $('round-lbl').textContent=p.label;
+  $('phase-pill').textContent=typeLabel[p.type]||p.type;
+  $('phase-pill').style.background=p.color+'22';$('phase-pill').style.color=p.color;
+  $('big-time').style.color=p.color;$('big-time').classList.remove('warning');
+  $('ex-title').textContent=p.name;$('ex-tip').textContent=p.tip;
+  $('phase-fill').style.background=p.color;
+  const nxt=phases[idx+1];
+  $('next-txt').textContent=nxt?nxt.name+' — '+fmt(nxt.dur):'¡Última fase!';
+  if(isNew){showBanner(p);flashScreen(p.color);playChange();vib([100,50,100]);}
+  updateDisplay();
+}
+function tick(){
+  if(paused)return;
+  secLeft--;totalLeft--;calBurned+=CAL_PER_SEC;
+  if(secLeft<=3&&secLeft>0){playCountdown();vib(40);$('big-time').classList.add('warning');}
+  else{$('big-time').classList.remove('warning');}
+  updateDisplay();
+  if(secLeft<=0){idx++;if(idx>=phases.length){finish();return;}loadPhase(true);}
+}
+function updateDisplay(){
+  $('big-time').textContent=fmt(secLeft);
+  $('phase-fill').style.width=Math.round((secLeft/phaseDur)*100)+'%';
+  $('m-cal').textContent=Math.round(calBurned);
+  $('m-left').textContent=Math.max(0,Math.round(CAL_TOTAL-calBurned));
+  $('m-time').textContent=fmt(Math.max(0,totalLeft));
+}
+function setPauseUI(p){$('pause-icon').textContent=p?'▶':'⏸';$('pause-lbl').textContent=p?'Continuar':'Pausar';}
+function togglePause(){paused=!paused;setPauseUI(paused);}
+function nextPhase(){if(idx+1>=phases.length){finish();return;}totalLeft=Math.max(0,totalLeft-secLeft);idx++;loadPhase(true);}
+function prevPhase(){
+  if(idx<=0)return;
+  const consumed=phaseDur-secLeft;
+  totalLeft=Math.min(TOTAL_DUR,totalLeft+consumed+phases[idx-1].dur);
+  calBurned=Math.max(0,calBurned-(consumed+phases[idx-1].dur)*CAL_PER_SEC);
+  idx--;loadPhase(true);
+}
+function restartWorkout(){clearInterval(ticker);startWorkout();}
+function stopWorkout(){clearInterval(ticker);if(wl)wl.release().catch(()=>{});show('start');}
+function finish(){
+  clearInterval(ticker);playDone();vib([200,100,200,100,300]);
+  $('d-cal').textContent=Math.round(calBurned);
+  $('d-time').textContent=fmt(TOTAL_DUR-Math.max(0,totalLeft));
+  show('done');
+}
+function resetAll(){show('start');}
+
+// Register service worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
